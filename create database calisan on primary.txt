@@ -1,0 +1,93 @@
+create database calisan on primary
+(
+	NAME = calisan_data,
+	FILENAME = 'C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\DATA\calisandata.mdf',
+	SIZE = 8MB,
+	MAXSIZE = unlimited,
+	FILEGROWTH = 10%
+	)
+log on
+(
+	NAME = calisan_log,
+	FILENAME = 'C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\DATA\calisanlog.ldf',
+	SIZE = 8MB,
+	MAXSIZE = unlimited,
+	FILEGROWTH = 10%
+)
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+CREATE TABLE birimler
+(
+	birim_id INT PRIMARY KEY,
+	birim_ad CHAR(25) NOT NULL,
+)
+CREATE TABLE calisanlar
+(
+	calisan_id INT PRIMARY KEY,
+	ad CHAR(25),
+	soyad CHAR(25),
+	maas INT,
+	katilmaTarihi DATETIME,
+	calisan_birim_id INT NOT NULL FOREIGN KEY REFERENCES birimler(birim_id)
+)
+
+CREATE TABLE ikramiye
+(
+	ikramiye_calisan_id INT NOT NULL FOREIGN KEY REFERENCES calisanlar(calisan_id),
+	ikramiye_ucret INT,
+	ikramiye_tarih DATETIME
+)
+CREATE TABLE unvan
+(
+	unvan_calisan_id INT NOT NULL FOREIGN KEY REFERENCES calisanlar(calisan_id),
+    unvan_calisan CHAR(25),
+    unvan_tarih DATETIME
+)
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
+INSERT INTO birimler VALUES (1,'Yazılım');
+INSERT INTO birimler VALUES (2,'Donanım');
+INSERT INTO birimler VALUES (3,'Güvenlik')
+------------------------------------------------------------------------------------------------------------------------------------------------------------------
+INSERT INTO calisanlar VALUES (1,'İsmail','İşeri',100000,'2014-02-20 00:00:00.000',1);
+INSERT INTO calisanlar VALUES (2,'Hami','Satılmış',80000,'2014-06-11 00:00:00.000',1);
+INSERT INTO calisanlar VALUES (3,'Durmuş','Şahin',300000,'2014-02-20 00:00:00.000',2);
+INSERT INTO calisanlar VALUES (4,'Kağan','Yazar',500000,'2014-02-20 00:00:00.000',3);
+INSERT INTO calisanlar VALUES (5,'Meryem','Soysaldı',500000,'2014-06-11 00:00:00.000',3);
+INSERT INTO calisanlar VALUES (6,'Duygu','Akşehir',200000,'2014-02-20 00:00:00.000',2);
+INSERT INTO calisanlar VALUES (7,'Kübra','Seyhan',75000,'2014-01-20 00:00:00.000',1);
+INSERT INTO calisanlar VALUES (8,'Gülcan','Yıldız',90000,'2014-04-11 00:00:00.000',3);
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+INSERT INTO ikramiye VALUES (1,5000,'2016-02-20 00:00:00.000');
+INSERT INTO ikramiye VALUES (2,3000,'2016-06-11 00:00:00.000');
+INSERT INTO ikramiye VALUES (3,4000,'2016-02-20 00:00:00.000');
+INSERT INTO ikramiye VALUES (1,4500,'2016-02-20 00:00:00.000');
+INSERT INTO ikramiye VALUES (2,3500,'2016-06-11 00:00:00.000');
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+INSERT INTO unvan VALUES (1,'Yönetici','2016-02-20 00:00:00.000');
+INSERT INTO unvan VALUES (2,'Personel','2016-06-11 00:00:00.000');
+INSERT INTO unvan VALUES (8,'Personel','2016-06-11 00:00:00.000');
+INSERT INTO unvan VALUES (5,'Müdür','2016-06-11 00:00:00.000');
+INSERT INTO unvan VALUES (4,'Yönetici Yardımcısı','2016-06-11 00:00:00.000');
+INSERT INTO unvan VALUES (7,'Personel','2016-06-11 00:00:00.000');
+INSERT INTO unvan VALUES (6,'Takım Lideri','2016-06-11 00:00:00.000');
+INSERT INTO unvan VALUES (3,'Takım Lideri','2016-06-11 00:00:00.000');
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SELECT ad,soyad,maas FROM calisanlar WHERE calisan_birim_id IN (SELECT birim_id FROM birimler WHERE birim_ad = 'Yazılım' OR birim_ad = 'Donanım');
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SELECT ad,soyad,maas FROM calisanlar WHERE maas = (SELECT MAX(maas) FROM calisanlar);
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SELECT birim_ad, COUNT(calisan_birim_id) AS calisan_sayisi FROM birimler INNER JOIN calisanlar ON birim_id = calisan_birim_id GROUP BY birim_ad;
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SELECT unvan_calisan, COUNT(unvan_calisan) AS calisan_sayisi FROM unvan GROUP BY unvan_calisan HAVING COUNT(unvan_calisan) > 1;
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SELECT ad, soyad, maas FROM calisanlar WHERE maas BETWEEN 50000 AND 100000;
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SELECT ad, soyad, birim_ad, unvan_calisan, ikramiye_ucret FROM calisanlar 
+INNER JOIN birimler ON calisan_birim_id = birim_id 
+INNER JOIN unvan ON calisan_id = unvan_calisan_id 
+INNER JOIN ikramiye ON calisan_id = ikramiye_calisan_id;
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SELECT ad, soyad, unvan_calisan FROM calisanlar INNER JOIN unvan ON calisan_id = unvan_calisan_id 
+WHERE unvan_calisan IN('Yönetici','Müdür');
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SELECT c.ad, c.soyad, c.maas FROM calisanlar c
+WHERE c.maas IN (SELECT MAX(c1.maas) FROM calisanlar c1 WHERE c1.calisan_birim_id = c.calisan_birim_id);
